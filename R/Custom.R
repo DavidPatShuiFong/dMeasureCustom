@@ -16,9 +16,13 @@ dMeasureCustom <- R6::R6Class("dMeasureCustom",
                               public = list(
                                 # dM is a dMeasure object
                                 dM = NULL,
+                                patient_list = NULL,
                                 initialize = function (dMeasure_obj) {
                                   # dMeasure_obj is a R6 dMeasure object
                                   self$dM <- dMeasure_obj
+                                  self$patient_list <- read.csv(system.file("202003AsthmaCOPD_Phase1.csv",
+                                                                            package = "dMeasureCustom"),
+                                                                stringsAsFactors = FALSE)
                                   if (length(public_init_fields$name) > 0) { # only if any defined
                                     for (i in 1:length(public_init_fields$name)) {
                                       if (public_init_fields$obj[[i]] == "dMeasureCustom") {
@@ -167,8 +171,11 @@ datatableServer <- function(input, output, session, dMCustom) {
                   "No appointments in selected range")
     )
     datatable_styled(dMCustom$dM$appointments_filtered_timeR() %>>%
+                       dplyr::filter(InternalID %in% dMCustom$patient_list$ID) %>>%
+                       dplyr::left_join(dMCustom$patient_list,
+                                        by = c("InternalID" = "ID")) %>>%
                        dplyr::select(Patient, AppointmentDate, AppointmentTime,
-                                     Provider, Status))
+                                     Provider, Status, Disease))
   })
 
   output$custom_table <- DT::renderDT({
