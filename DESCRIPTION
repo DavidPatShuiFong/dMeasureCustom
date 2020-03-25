@@ -1,0 +1,26 @@
+Package: dMeasureCustom
+Type: Package
+Title: Custom module for dMeasure
+Version: 0.1.0
+Author: David Fong
+Maintainer: David Fong <vkelim@bigpond.com>
+Description: List services (billings) provided by clinicians
+License: LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    dplyr,
+    dbplyr,
+    R6,
+    pipeR,
+    dMeasure,
+    shiny,
+    shinydashboard,
+    shinycssloaders
+Suggests:
+    shiny
+RoxygenNote: 7.0.2.9000
+Collate: 
+    'r6_helpers.R'
+    'Custom.R'
+    'utils-pipe.R'
