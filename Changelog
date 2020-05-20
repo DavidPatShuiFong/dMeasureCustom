@@ -1,4 +1,19 @@
 Changelog
 
+0.2.0 - 20th May 2020
+=====================
+
+Changes to allow storage of patient lists in dMeasure
+
+* initialize_data_table to create table CustomPatientLists in
+   dMeasure's SQLite configuration database
+* read_configuration_db reads CustomPatientLists and stores
+   the list/dataframe in self$patientList
+  columns are id (numeric), name (character) and patientList (blob)
+  note that $patientList cannot be manipulated by dplyr due
+  to the presence of the blob.
+* write_patientList - adds patient list stored in CSV
+* remove_patientList - removes by name
+
 0.1.0 - 25th March 2020
 =======================

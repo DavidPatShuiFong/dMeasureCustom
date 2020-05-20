@@ -13,11 +13,15 @@ dMeasureCustom class
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-new}{\code{dMeasureCustom$new()}}
+\item \href{#method-read_configuration_db}{\code{dMeasureCustom$read_configuration_db()}}
+\item \href{#method-write_patientList}{\code{dMeasureCustom$write_patientList()}}
+\item \href{#method-remove_patientList}{\code{dMeasureCustom$remove_patientList()}}
 \item \href{#method-clone}{\code{dMeasureCustom$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{dMeasureCustom$new(dMeasure_obj)}\if{html}{\out{</div>}}
@@ -25,7 +29,41 @@ dMeasureCustom class
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_configuration_db"></a>}}
+\if{latex}{\out{\hypertarget{method-read_configuration_db}{}}}
+\subsection{Method \code{read_configuration_db()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dMeasureCustom$read_configuration_db()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-write_patientList"></a>}}
+\if{latex}{\out{\hypertarget{method-write_patientList}{}}}
+\subsection{Method \code{write_patientList()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dMeasureCustom$write_patientList(
+  name,
+  filename,
+  column_ID = "ID",
+  column_Label = "Label",
+  keepAllColumns = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-remove_patientList"></a>}}
+\if{latex}{\out{\hypertarget{method-remove_patientList}{}}}
+\subsection{Method \code{remove_patientList()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dMeasureCustom$remove_patientList(name)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
