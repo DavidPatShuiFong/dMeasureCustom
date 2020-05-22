@@ -20,6 +20,7 @@ dMeasureCustom <- R6::R6Class(
     patientLists = NULL,
     # pointer to patientLists table in configuration database
     patientList = NULL,
+    chosen_patientList = NULL,
     # the actual patient lists
     initialize = function (dMeasure_obj) {
       # dMeasure_obj is a R6 dMeasure object
@@ -144,7 +145,10 @@ datatableUI <- function(id) {
                                     "  Print and Copy View"),
                       labelWidth = "12em",
                       width = "20em")
-      )
+      ),
+      shiny::column(2,
+        offset = 3,
+        shiny::uiOutput(ns("patientListNames")))
     ),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("custom_table")),
@@ -170,6 +174,31 @@ datatableServer <- function(input, output, session, dMCustom) {
 
   ns <- session$ns
 
+  output$patientListNames <- shiny::renderUI({
+    if (is.null(dMCustom$patientListNamesR())) {
+      shinyWidgets::dropdown(
+        inputId = ns("choice_dropdown"),
+        "No patient lists defined",
+        icon = icon("gear"),
+        label = "Patient lists"
+      )
+    } else {
+      shinyWidgets::dropdown(
+        inputId = ns("choice_dropdown"),
+        shinyWidgets::checkboxGroupButtons(
+          inputId = ns("patientList_chosen"),
+          label = "Patient lists shown",
+          choices = dMCustom$patientListNames,
+          selected = NULL,
+          status = "primary",
+          checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+        ),
+        icon = icon("gear"),
+        label = "Patient lists"
+      )
+    }
+  })
+
   styled_custom_list <- shiny::reactive({
     shiny::validate(
       shiny::need(
@@ -178,12 +207,7 @@ datatableServer <- function(input, output, session, dMCustom) {
       )
     )
     datatable_styled(
-      dMCustom$dM$appointments_filtered_timeR() %>>%
-        dplyr::filter(InternalID %in% dMCustom$patient_list$ID) %>>%
-        dplyr::left_join(dMCustom$patient_list,
-          by = c("InternalID" = "ID")) %>>%
-        dplyr::select(Patient, AppointmentDate, AppointmentTime,
-          Provider, Status, Label)
+      dMCustom$appointments_patientListR()
     )
   })
 
@@ -192,6 +216,18 @@ datatableServer <- function(input, output, session, dMCustom) {
   })
 
 }
+
+.reactive_event(dMeasureCustom, "chosen_patientListR",
+  quote(
+    shiny::eventReactive(
+      self$dM$appointments_filtered_timeR(), {
+        browser()
+        self$chosen_patientList <- input$patientList_chosen
+        return(self$chosen_patientList)
+      }
+      )
+    )
+  )
 
 #' Custom module - initialize database table
 #'
@@ -234,8 +270,13 @@ read_configuration_db <- function(
   self$patientList <-
     DBI::dbReadTable(self$dM$config_db$conn(), "CustomPatientLists")
 
-  return()
+  private$set_reactive(self$patientListNamesR, self$patientList$Name)
+  # set to names of patient lists
+
+  return(self$patientList)
 })
+
+.reactive(dMeasureCustom, "patientListNamesR", NULL)
 
 #' write patient list to configuration database
 #'
@@ -323,7 +364,7 @@ write_patientList <- function(
 
     query <- paste0(
       "INSERT INTO CustomPatientLists",
-      "(id, name, patientList)",
+      "(id, Name, patientList)",
       "VALUES ($id, $name, $patientList)"
     )
     data_for_sql <- list(
@@ -356,17 +397,13 @@ write_patientList <- function(
 #' @return TRUE if removed successfully
 #'
 #' @export
-remove_patientList <- function(
-  dMeasureCustom_obj,
-  name) {
+remove_patientList <- function(dMeasureCustom_obj, name) {
   dMeasureCustom_obj$remove_patientList(
     name
   )
 }
 .public(dMeasureCustom, "remove_patientList",
-  function(
-    name
-  ) {
+  function(name) {
     # remove patient list from configuration database
 
     if (!name %in% self$patientList$Name) {
@@ -376,7 +413,7 @@ remove_patientList <- function(
     }
 
     query <- paste0(
-      "DELETE FROM CustomPatientLists WHERE name = ?"
+      "DELETE FROM CustomPatientLists WHERE Name = ?"
     )
     data_for_sql <- list(
       name = name
@@ -385,4 +422,80 @@ remove_patientList <- function(
 
     return(TRUE)
   }
+)
+
+#' patient appointment list combined with custom patient list labels
+#'
+#'  derived from dM$appointments_filtered_time
+#'
+#' @param dMeasureCustom_obj R6 object
+#' @param chosen_patientList names of chosen custom patient lists
+#'
+#' @return dataframe of apppointments
+#'  $Patient, $AppointmentDate, $AppointmentTime,
+#'  $Provider, $Status, $Label
+#'
+#' @export
+appointments_patientList <- function(dMeasureCustom_obj, chosen_patientList = NA) {
+  dMeasureCustom_obj$appointments_patientList(chosen_patientList)
+}
+.public(dMeasureCustom, "appointments_patientList",
+  function(chosen_patientList = NA) {
+
+    if (is.na(chosen_patientList)) {
+      chosen_patientList <- self$chosen_patientList
+    }
+
+    intID <- c(-1)
+
+    for (i in chosen_patientList) {
+      # go through patientLists, finding relevant internal IDs
+      j <- match(i, self$patientList$Name)
+      intID <- c(
+        intID,
+        unserialize(self$patientList$patientList[[j]])$ID
+        )
+    }
+
+    l <- self$dM$appointments_filtered_time %>>%
+      dplyr::filter(InternalID %in% intID) %>>%
+      dplyr::mutate(LabelCombined = NA)
+
+    for (i in chosen_patientList) {
+      # go through patientLists, add column labels one-by-one
+      j <- match(i, self$patientList$Name)
+      l <- l %>>%
+        dplyr::left_join(
+          unserialize(self$patientList$patientList[[j]]),
+          by = c("InternalID" = "ID")) %>>%
+        dplyr::mutate(
+          LabelCombined = dMeasure::paste2(
+            LabelCombined,
+            Label,
+            na.rm = TRUE, sep = ", "
+          )
+          # sequentially added, separated by commas
+        ) %>>%
+        dplyr::select(-c("Label"))
+    }
+    l <- l %>>%
+      dplyr::rename(Label = LabelCombined) %>>%
+      dplyr::select(Patient, AppointmentDate, AppointmentTime,
+        Provider, Status, Label)
+
+    return(l)
+  }
+)
+.reactive_event(
+  dMeasureCustom, "appointments_patientListR",
+  quote(
+    shiny::eventReactive(
+      c(
+        self$chosen_patientListR(),
+        self$dM$appointments_filtered_timeR()
+      ), {
+        self$appointments_patientList()
+      }
+    )
+  )
 )
