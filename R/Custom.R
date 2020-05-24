@@ -20,7 +20,6 @@ dMeasureCustom <- R6::R6Class(
     patientLists = NULL,
     # pointer to patientLists table in configuration database
     patientList = NULL,
-    chosen_patientList = NULL,
     # the actual patient lists
     initialize = function (dMeasure_obj) {
       # dMeasure_obj is a R6 dMeasure object
@@ -121,6 +120,57 @@ dMeasureShinytabItems <- function() {
   return(x)
 }
 
+#' Custom module - configuration tabpanel item
+#'
+#' @return tabPanel
+#'
+#' @export
+dMeasureConfigurationTabPanelItem <- function() {
+  shiny::tabPanel(
+    title = "Custom patient lists",
+    value = "CustomPatientLists",
+    shiny::column(
+      width = 12,
+      dMeasureCustom::dMeasureConfigurationTabPanelUI(
+        "dMeasureCustom_config_dt"
+      )
+    )
+  )
+}
+
+#' Custom module - configuration panel
+#'
+#' @name dMeasureConfigurationTabPanelUI
+#'
+#' @param id module ID
+#'
+#' @return shiny user interface element
+#'
+#' @export
+dMeasureConfigurationTabPanelUI <- function(id) {
+  ns <- shiny::NS(id)
+
+}
+
+#' Custom module - server
+#'
+#' @name dMeasureConfigurationTabPanel
+#'
+#' @param input as required by Shiny modules
+#' @param output as required by Shiny modules
+#' @param session as required by Shiny modules
+#' @param dMCustom dMeasureCustom R6 object
+#'
+#' @return none
+#'
+#' @export
+dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
+
+  ns <- session$ns
+
+  }
+
+
 #' Custom module - UI function
 #'
 #' Display appointments within selected range of dates and providers
@@ -214,20 +264,26 @@ datatableServer <- function(input, output, session, dMCustom) {
   output$custom_table <- DT::renderDT({
     styled_custom_list()
   })
-
 }
 
-.reactive_event(dMeasureCustom, "chosen_patientListR",
-  quote(
-    shiny::eventReactive(
-      self$dM$appointments_filtered_timeR(), {
-        browser()
-        self$chosen_patientList <- input$patientList_chosen
-        return(self$chosen_patientList)
-      }
-      )
+.private(dMeasureCustom, ".chosen_patientList", NULL)
+.active(dMeasureCustom, "chosen_patientList", function(value) {
+  if (missing(value)) {
+    return(private$.chosen_patientList)
+  }
+  if (is.null(setdiff(value, self$patientList$Name))) {
+    # setdiff is assymmetrical
+    # will be NULL if all 'value' is in self$patientList$Name
+    private$.chosen_patientList <- value
+    private$set_reactive(self$chose_patientListR, value)
+  } else {
+    warning(
+      setdiff(value, self$patientList$Name),
+      " is not a patientList."
     )
-  )
+  }
+})
+.reactive(dMeasureCustom, "chosen_patientListR", NULL)
 
 #' Custom module - initialize database table
 #'

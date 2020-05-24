@@ -2,6 +2,9 @@
 
 export("%>>%")
 export(appointments_patientList)
+export(dMeasureConfigurationTabPanel)
+export(dMeasureConfigurationTabPanelItem)
+export(dMeasureConfigurationTabPanelUI)
 export(dMeasureCustom)
 export(dMeasureShinytabItems)
 export(datatableServer)
