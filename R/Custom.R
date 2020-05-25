@@ -150,6 +150,12 @@ dMeasureConfigurationTabPanelItem <- function() {
 dMeasureConfigurationTabPanelUI <- function(id) {
   ns <- shiny::NS(id)
 
+  shiny::tagList(
+    shiny::fluidRow(
+      "Placeholder"
+    )
+  )
+
 }
 
 #' Custom module - server
@@ -168,7 +174,7 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
 
   ns <- session$ns
 
-  }
+}
 
 
 #' Custom module - UI function
