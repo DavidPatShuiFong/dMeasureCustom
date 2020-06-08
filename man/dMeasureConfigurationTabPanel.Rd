@@ -2,7 +2,7 @@
 % Please edit documentation in R/Custom.R
 \name{dMeasureConfigurationTabPanel}
 \alias{dMeasureConfigurationTabPanel}
-\title{Custom module - server}
+\title{Custom module - configuration panel server}
 \usage{
 dMeasureConfigurationTabPanel(input, output, session, dMCustom)
 }
@@ -19,5 +19,5 @@ dMeasureConfigurationTabPanel(input, output, session, dMCustom)
 none
 }
 \description{
-Custom module - server
+Custom module - configuration panel server
 }

@@ -180,14 +180,6 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
 
   ns <- session$ns
 
-  customLists <- shiny::eventReactive(
-    dMCustom$patientListNamesR(),
-    ignoreInit = TRUE, {
-      dMCustom$patientList %>>%
-        dplyr::select(id, Name)
-    }
-  )
-
   viewedList <- reactiveVal(NULL)
   # the currently viewed list. columns are ID and Label
   patientList.callback.actionButton <- function(data, row, buttonID) {
@@ -220,6 +212,34 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
     spreadsheet()
   })
 
+  patientList.callback.insert <- function(data, row) {
+    outfile <- tempfile(fileext = ".csv")
+    # create temporary file name
+    if (data[row, "Name"][[1]] %in% data[-row,]$Name) {
+      stop(paste("Can't use the same name as other lists!"))
+    }
+    zz <- file(outfile, "wb") # create temporary file
+    writeBin(object = unlist(data[row, "patientList"]), con = zz)
+    # currently "patientList" column contains a binary blob of a file
+    close(zz) # outputs the inserted CSV into a temporary file
+
+    newID <- dMCustom$write_patientList(data[row, "Name"][[1]], outfile)
+    # write_patientList also sets dMCustom$patientList
+    data <- dMCustom$patientList # read the database back in
+
+    # cleanup (remove the temporary file)
+    file.remove(outfile)
+
+    return(data)
+  }
+
+  patientList.callback.delete <- function(data, row) {
+    dMCustom$remove_patientList(data[row, "Name"][[1]])
+    data <- dMCustom$patientList # read the database back in
+
+    return(data)
+  }
+
   shiny::observeEvent(
     dMCustom$patientListNamesR(),
     ignoreNULL = TRUE, once = TRUE, {
@@ -229,6 +249,8 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
         thedata = dMCustom$patientList,
         view.cols = c("id", "Name"),
         edit.cols = c("Name", "patientList"),
+        edit.label.cols = c("Name of List", "Patient List (.csv), must have 'ID' and 'Label' columns"),
+        input.choices = list(patientList = ".csv"),
         show.copy = FALSE,
         action.buttons = list(
           viewlist = list(
@@ -237,7 +259,9 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
             buttonPrefix = "view"
           )
         ),
-        callback.actionButton = patientList.callback.actionButton
+        callback.actionButton = patientList.callback.actionButton,
+        callback.insert = patientList.callback.insert,
+        callback.delete = patientList.callback.delete
       )
     }
   )
@@ -557,9 +581,7 @@ remove_patientList <- function(dMeasureCustom_obj, name) {
     query <- paste0(
       "DELETE FROM CustomPatientLists WHERE Name = ?"
     )
-    data_for_sql <- list(
-      name = name
-    )
+    data_for_sql <- list(name)
     self$dM$config_db$dbSendQuery(query, data_for_sql)
 
     self$patientList <-

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Custom.R
 \name{dMeasureConfigurationTabPanelUI}
 \alias{dMeasureConfigurationTabPanelUI}
-\title{Custom module - configuration panel}
+\title{Custom module - configuration panel UI}
 \usage{
 dMeasureConfigurationTabPanelUI(id)
 }
@@ -13,5 +13,5 @@ dMeasureConfigurationTabPanelUI(id)
 shiny user interface element
 }
 \description{
-Custom module - configuration panel
+Custom module - configuration panel UI
 }
