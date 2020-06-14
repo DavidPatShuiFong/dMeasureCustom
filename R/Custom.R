@@ -324,13 +324,15 @@ datatableUI <- function(id) {
       ),
       shiny::column(2,
         offset = 3,
-        shiny::uiOutput(ns("patientListNames")))
+        shiny::uiOutput(ns("patientListNames"))
+      )
     ),
     shinycssloaders::withSpinner(
       DT::DTOutput(ns("custom_table")),
       type = 8,
       hide.element.when.recalculating = FALSE,
-      proxy.height = NULL)
+      proxy.height = NULL
+    )
   )
 }
 
@@ -364,7 +366,7 @@ datatableServer <- function(input, output, session, dMCustom) {
         shinyWidgets::checkboxGroupButtons(
           inputId = ns("patientList_chosen"),
           label = "Patient lists shown",
-          choices = dMCustom$patientListNames,
+          choices = dMCustom$patientListNamesR(),
           selected = NULL,
           status = "primary",
           checkIcon = list(yes = icon("ok", lib = "glyphicon"))
@@ -375,6 +377,10 @@ datatableServer <- function(input, output, session, dMCustom) {
     }
   })
 
+  observeEvent(input$patientList_chosen, {
+    dMCustom$chosen_patientList <- input$patientList_chosen
+  })
+
   styled_custom_list <- shiny::reactive({
     shiny::validate(
       shiny::need(
@@ -382,7 +388,7 @@ datatableServer <- function(input, output, session, dMCustom) {
         "No appointments in selected range"
       )
     )
-    datatable_styled(
+    DailyMeasure::datatable_styled(
       dMCustom$appointments_patientListR()
     )
   })
@@ -397,11 +403,11 @@ datatableServer <- function(input, output, session, dMCustom) {
   if (missing(value)) {
     return(private$.chosen_patientList)
   }
-  if (is.null(setdiff(value, self$patientList$Name))) {
+  if (length(setdiff(value, self$patientList$Name)) == 0) {
     # setdiff is assymmetrical
-    # will be NULL if all 'value' is in self$patientList$Name
+    # will be length 0 if all 'value' is in self$patientList$Name
     private$.chosen_patientList <- value
-    private$set_reactive(self$chose_patientListR, value)
+    private$set_reactive(self$chosen_patientListR, value)
   } else {
     warning(
       setdiff(value, self$patientList$Name),
