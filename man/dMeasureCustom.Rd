@@ -15,6 +15,7 @@ dMeasureCustom class
 \item \href{#method-new}{\code{dMeasureCustom$new()}}
 \item \href{#method-read_configuration_db}{\code{dMeasureCustom$read_configuration_db()}}
 \item \href{#method-write_patientList}{\code{dMeasureCustom$write_patientList()}}
+\item \href{#method-update_patientList}{\code{dMeasureCustom$update_patientList()}}
 \item \href{#method-remove_patientList}{\code{dMeasureCustom$remove_patientList()}}
 \item \href{#method-appointments_patientList}{\code{dMeasureCustom$appointments_patientList()}}
 \item \href{#method-clone}{\code{dMeasureCustom$clone()}}
@@ -49,6 +50,22 @@ dMeasureCustom class
   column_ID = "ID",
   column_Label = "Label",
   keepAllColumns = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-update_patientList"></a>}}
+\if{latex}{\out{\hypertarget{method-update_patientList}{}}}
+\subsection{Method \code{update_patientList()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dMeasureCustom$update_patientList(
+  name,
+  filename,
+  column_ID = "ID",
+  column_Label = "Label",
+  keepAllColumns = FALSE,
+  ID = NULL
 )}\if{html}{\out{</div>}}
 }
 

@@ -208,8 +208,8 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
           dplyr::mutate(DOB = as.Date(DOB))
       )
     })
-  output$showSpreadsheet <- DT::renderDataTable({
-    spreadsheet()
+  output$showSpreadsheet <- DT::renderDT({
+    DailyMeasure::datatable_styled(spreadsheet())
   })
 
   patientList.callback.insert <- function(data, row) {
@@ -225,6 +225,34 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
 
     newID <- dMCustom$write_patientList(data[row, "Name"][[1]], outfile)
     # write_patientList also sets dMCustom$patientList
+    data <- dMCustom$patientList # read the database back in
+
+    # cleanup (remove the temporary file)
+    file.remove(outfile)
+
+    return(data)
+  }
+
+  patientList.callback.update <- function(data, olddata, row) {
+    outfile <- tempfile(fileext = ".csv")
+    # create temporary file name
+    if (data[row, "Name"][[1]] %in% data[-row,]$Name) {
+      stop(paste("Can't use the same name as other lists!"))
+    }
+    zz <- file(outfile, "wb") # create temporary file
+    writeBin(object = unlist(data[row, "patientList"]), con = zz)
+    # currently "patientList" column contains a binary blob of a file
+    close(zz) # outputs the inserted CSV into a temporary file
+
+    tryCatch(
+      result <- dMCustom$update_patientList(
+        name = data[row, "Name"][[1]],
+        filename = outfile,
+        ID = data[row, "id"]
+      ),
+      error = function(e) stop(e)
+    )
+
     data <- dMCustom$patientList # read the database back in
 
     # cleanup (remove the temporary file)
@@ -261,7 +289,8 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
         ),
         callback.actionButton = patientList.callback.actionButton,
         callback.insert = patientList.callback.insert,
-        callback.delete = patientList.callback.delete
+        callback.delete = patientList.callback.delete,
+        callback.update = patientList.callback.update
       )
     }
   )
@@ -553,6 +582,134 @@ write_patientList <- function(
 
     return(newID)
   }
+)
+
+#' update patient list in configuration database
+#'
+#' @param dMeasureCustom_obj R6 object
+#' @param name name of patient list
+#' @param filename CSV (comma-separated-value) filename
+#'   expects at least two columns,
+#'   'ID' and 'Label'
+#' @param column_ID name of ID column
+#' @param column_Label name of label column
+#' @param keepAllColumns if FALSE, trim to just 'ID' and 'Label' columns
+#' @param ID ID of patient list. If not provided, will try to infer from \code{name}
+#'
+#' @return ID of patient list.
+#'  stop errors generated for several different reasons of failure
+#'
+#' @export
+update_patientList <- function(
+  dMeasureCustom_obj,
+  name,
+  filename,
+  column_ID = "ID",
+  column_Label = "Label",
+  keepAllColumns = FALSE,
+  ID = NULL) {
+  dMeasureCustom_obj$write_patientList(
+    name, filename,
+    column_ID, column_Label,
+    keepAllColumns, ID
+  )
+}
+.public(dMeasureCustom, "update_patientList",
+        function(
+          name, filename,
+          column_ID = "ID", column_Label = "Label",
+          keepAllColumns = FALSE, ID = NULL
+        ) {
+          # write patient list to configuration database
+
+          if (!is.null(ID)) {
+            # ID has been defined
+            if (name %in% (self$patientList[self$patientList$id != ID, ]$Name)) {
+              # this name already chosen with a different ID
+              stop("'", name, "' already exists as a named patient list.")
+            }
+            # otherwise, we are going to change the name
+          } else {
+            # ID has *not* been defined, we need to find the ID
+            # hopefully, the 'name' will help find the ID
+            ID <- which(name == self$patientList$Name)
+            if (length(ID) == 0) {
+              # length will == 1 if an ID was found
+              # ID == numeric(0) if not found
+              stop("'", name, "' does not define a patient list, and ID not provided.")
+            }
+          }
+
+          if (!file.exists(filename)) {
+            stop("'", filename, "' does not exist.")
+          }
+
+          read_csv_success <- TRUE # by default
+          tryCatch(
+            d <- read.csv(filename, stringsAsFactors = FALSE),
+            error = function(e) {
+              warning(e)
+              read_csv_success <<- FALSE
+            }
+          )
+          if (!read_csv_success) {
+            stop("Unable to read file '", filename, "' as CSV.")
+          }
+          if (!exists(column_ID, d) || !exists(column_Label, d)) {
+            stop(
+              "File does not contain 'ID' and 'Label' column",
+              " names '", column_ID, "' and '", column_Label, "'."
+            )
+          }
+
+          d <- d %>>%
+            dplyr::mutate(
+              ID = !!as.symbol(column_ID),
+              # patient identification IDs (internal ID)
+              #
+              # not that this ID is not the same as the
+              # ID of the patient list!
+              Label = !!as.symbol(column_Label)
+            ) # converts column names to 'ID' and 'Label'
+          if (!keepAllColumns) {
+            # if keepAllColumns is TRUE, then extra original
+            # columns are kept, which would take more storage space
+            # to store
+            d <- d %>>%
+              dplyr::select(ID, Label)
+          }
+
+          query <- paste(
+            "UPDATE CustomPatientLists SET",
+            "Name = $name, patientList = $patientList",
+            "WHERE id = $id"
+          )
+          data_for_sql <- list(
+            name = name,
+            patientList = data.frame(
+              data = I(serialize(d, NULL, xdr = FALSE, version = 3))
+            ),
+            id = ID
+            # data.frame(data = I(serialize(d))) creates the 'single' object that
+            # dbSendQuery wants
+            # strangely, the data can be read as follow (for the first row)
+            # x <- DBI::dbReadTable(dM$config_db$conn(), "CustomPatientLists")
+            # x$patientList[1] - returns 'blob'
+            # x$patientList[[1]] - returns raw
+            # unserialize(x$patientList[[1]]) - returns dataframe
+            # referring to 'data' as a column seems unnecessary!
+          )
+
+          self$dM$config_db$dbSendQuery(query, data_for_sql)
+
+          self$patientList <-
+            DBI::dbReadTable(self$dM$config_db$conn(), "CustomPatientLists")
+          # re-read patient list
+          private$set_reactive(self$patientListNamesR, self$patientList$Name)
+          # set names of patient lists
+
+          return(ID)
+        }
 )
 
 #' remove patient list from configuration database
