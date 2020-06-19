@@ -21,7 +21,7 @@ dMeasureCustom <- R6::R6Class(
     # pointer to patientLists table in configuration database
     patientList = NULL,
     # the actual patient lists
-    initialize = function (dMeasure_obj) {
+    initialize = function(dMeasure_obj) {
       # dMeasure_obj is a R6 dMeasure object
       self$dM <- dMeasure_obj
 
@@ -113,10 +113,10 @@ dMeasureShinytabItems <- function() {
   x <- list(
     shinydashboard::tabItem(
       tabName = "custom",
-      shiny::fluidRow(column(width = 12, align = "center",
-                             h2("Custom"))),
-      shiny::fluidRow(column(width = 12,
-                             dMeasureCustom::datatableUI("custom_dt")))
+      shiny::fluidRow(shiny::column(width = 12, align = "center",
+                                    shiny::h2("Custom"))),
+      shiny::fluidRow(shiny::column(width = 12,
+                                    dMeasureCustom::datatableUI("custom_dt")))
     )
   )
   return(x)
@@ -180,7 +180,7 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
 
   ns <- session$ns
 
-  viewedList <- reactiveVal(NULL)
+  viewedList <- shiny::reactiveVal(NULL)
   # the currently viewed list. columns are ID and Label
   patientList.callback.actionButton <- function(data, row, buttonID) {
     # data - the current copy of 'thedata'
@@ -193,7 +193,7 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
     }
   }
 
-  spreadsheet <- reactiveVal(NULL)
+  spreadsheet <- shiny::reactiveVal(NULL)
   shiny::observeEvent(
     viewedList(), ignoreNULL = TRUE,{
       intID <- c(-1, viewedList()$ID)
@@ -357,7 +357,7 @@ datatableServer <- function(input, output, session, dMCustom) {
       shinyWidgets::dropdown(
         inputId = ns("choice_dropdown"),
         "No patient lists defined",
-        icon = icon("gear"),
+        icon = shiny::icon("gear"),
         label = "Patient lists"
       )
     } else {
@@ -369,15 +369,15 @@ datatableServer <- function(input, output, session, dMCustom) {
           choices = dMCustom$patientListNamesR(),
           selected = NULL,
           status = "primary",
-          checkIcon = list(yes = icon("ok", lib = "glyphicon"))
+          checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
         ),
-        icon = icon("gear"),
+        icon = shiny::icon("gear"),
         label = "Patient lists"
       )
     }
   })
 
-  observeEvent(input$patientList_chosen, {
+  shiny::observeEvent(input$patientList_chosen, {
     dMCustom$chosen_patientList <- input$patientList_chosen
   })
 
