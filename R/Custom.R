@@ -377,7 +377,7 @@ datatableServer <- function(input, output, session, dMCustom) {
     }
   })
 
-  shiny::observeEvent(input$patientList_chosen, {
+  shiny::observeEvent(input$patientList_chosen, ignoreNULL = FALSE, {
     dMCustom$chosen_patientList <- input$patientList_chosen
   })
 
@@ -757,6 +757,46 @@ remove_patientList <- function(dMeasureCustom_obj, name) {
   }
 )
 
+#' add tags to a patient list
+#'
+#' @param custom_patientLists the custom patient lists
+#' @param chosen_patientList the names of the chosen patient lists
+#' @param patient_list dataframe, must contain column internalID
+#' @param screentag add fomantic/semantic tags
+#' @param screentag_print  add printable/copyable text-only tags
+#'
+#' @return dataframe, with added column screentag or screentag_print
+add_customTags <- function(
+  custom_patientLists,
+  chosen_patientList,
+  patient_list,
+  screentag = FALSE,
+  screentag_print = TRUE
+) {
+
+  patient_list <- patient_list %>>%
+    dplyr::mutate(screentag_print = NA) # prepare to be filled!
+  for (i in chosen_patientList) {
+    # go through patientLists, add column labels one-by-one
+    j <- match(i, custom_patientLists$Name)
+    patient_list <- patient_list %>>%
+      dplyr::left_join(
+        unserialize(custom_patientLists$patientList[[j]]),
+        by = c("InternalID" = "ID")) %>>%
+      dplyr::mutate(
+        screentag_print = dMeasure::paste2(
+          screentag_print,
+          Label,
+          na.rm = TRUE, sep = ", "
+        )
+        # sequentially added, separated by commas
+      ) %>>%
+      dplyr::select(-c("Label"))
+  }
+
+  return(patient_list)
+}
+
 #' patient appointment list combined with custom patient list labels
 #'
 #'  derived from dM$appointments_filtered_time
@@ -779,8 +819,7 @@ appointments_patientList <- function(dMeasureCustom_obj, chosen_patientList = NA
       chosen_patientList <- self$chosen_patientList
     }
 
-    intID <- c(-1)
-
+    intID <- c(-1) # create vector of intID in the chosen custom lists
     for (i in chosen_patientList) {
       # go through patientLists, finding relevant internal IDs
       j <- match(i, self$patientList$Name)
@@ -791,28 +830,18 @@ appointments_patientList <- function(dMeasureCustom_obj, chosen_patientList = NA
     }
 
     l <- self$dM$appointments_filtered_time %>>%
-      dplyr::filter(InternalID %in% intID) %>>%
-      dplyr::mutate(LabelCombined = NA)
+      dplyr::filter(InternalID %in% intID)
 
-    for (i in chosen_patientList) {
-      # go through patientLists, add column labels one-by-one
-      j <- match(i, self$patientList$Name)
-      l <- l %>>%
-        dplyr::left_join(
-          unserialize(self$patientList$patientList[[j]]),
-          by = c("InternalID" = "ID")) %>>%
-        dplyr::mutate(
-          LabelCombined = dMeasure::paste2(
-            LabelCombined,
-            Label,
-            na.rm = TRUE, sep = ", "
-          )
-          # sequentially added, separated by commas
-        ) %>>%
-        dplyr::select(-c("Label"))
-    }
+    l <- add_customTags(
+      self$patientList,
+      chosen_patientList,
+      l,
+      screentag = FALSE,
+      screentag_print = TRUE
+    )
+
     l <- l %>>%
-      dplyr::rename(Label = LabelCombined) %>>%
+      dplyr::rename(Label = screentag_print) %>>%
       dplyr::select(Patient, AppointmentDate, AppointmentTime,
         Provider, Status, Label)
 
