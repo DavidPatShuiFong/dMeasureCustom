@@ -4,17 +4,27 @@
 \alias{appointments_patientList}
 \title{patient appointment list combined with custom patient list labels}
 \usage{
-appointments_patientList(dMeasureCustom_obj, chosen_patientList = NA)
+appointments_patientList(
+  dMeasureCustom_obj,
+  chosen_patientList = NA,
+  screentag = NA,
+  screentag_print = NA
+)
 }
 \arguments{
 \item{dMeasureCustom_obj}{R6 object}
 
 \item{chosen_patientList}{names of chosen custom patient lists}
+
+\item{screentag}{if neither \code{screentag} or \code{screentag_print} is
+defined then values are derived from \code{self$printcopy_view}}
+
+\item{screentag_print}{}
 }
 \value{
 dataframe of apppointments
- $Patient, $AppointmentDate, $AppointmentTime,
- $Provider, $Status, $Label
+$Patient, $AppointmentDate, $AppointmentTime,
+$Provider, $Status, $Label
 }
 \description{
 derived from dM$appointments_filtered_time

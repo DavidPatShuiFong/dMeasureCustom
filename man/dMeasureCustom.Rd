@@ -84,7 +84,11 @@ dMeasureCustom class
 \if{latex}{\out{\hypertarget{method-appointments_patientList}{}}}
 \subsection{Method \code{appointments_patientList()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dMeasureCustom$appointments_patientList(chosen_patientList = NA)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dMeasureCustom$appointments_patientList(
+  chosen_patientList = NA,
+  screentag = NA,
+  screentag_print = NA
+)}\if{html}{\out{</div>}}
 }
 
 }

@@ -95,9 +95,11 @@ dMeasureCustom <- R6::R6Class(
 #'
 #' @export
 shinydashboardmenuItem <- function() {
-  return(shinydashboard::menuItem(
-    "Custom",
-    tabName = "custom", icon = shiny::icon("cocktail"))
+  return(
+    shinydashboard::menuItem(
+      "Custom",
+      tabName = "custom", icon = shiny::icon("cocktail")
+    )
   )
 }
 
@@ -109,14 +111,17 @@ shinydashboardmenuItem <- function() {
 #'
 #' @export
 dMeasureShinytabItems <- function() {
-
   x <- list(
     shinydashboard::tabItem(
       tabName = "custom",
-      shiny::fluidRow(shiny::column(width = 12, align = "center",
-                                    shiny::h2("Custom"))),
-      shiny::fluidRow(shiny::column(width = 12,
-                                    dMeasureCustom::datatableUI("custom_dt")))
+      shiny::fluidRow(shiny::column(
+        width = 12, align = "center",
+        shiny::h2("Custom")
+      )),
+      shiny::fluidRow(shiny::column(
+        width = 12,
+        dMeasureCustom::datatableUI("custom_dt")
+      ))
     )
   )
   return(x)
@@ -177,7 +182,6 @@ dMeasureConfigurationTabPanelUI <- function(id) {
 #'
 #' @export
 dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
-
   ns <- session$ns
 
   viewedList <- shiny::reactiveVal(NULL)
@@ -195,7 +199,8 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
 
   spreadsheet <- shiny::reactiveVal(NULL)
   shiny::observeEvent(
-    viewedList(), ignoreNULL = TRUE,{
+    viewedList(),
+    ignoreNULL = TRUE, {
       intID <- c(-1, viewedList()$ID)
       spreadsheet(
         viewedList() %>>%
@@ -207,7 +212,8 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
           ) %>>%
           dplyr::mutate(DOB = as.Date(DOB))
       )
-    })
+    }
+  )
   output$showSpreadsheet <- DT::renderDT({
     DailyMeasure::datatable_styled(spreadsheet())
   })
@@ -215,7 +221,7 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
   patientList.callback.insert <- function(data, row) {
     outfile <- tempfile(fileext = ".csv")
     # create temporary file name
-    if (data[row, "Name"][[1]] %in% data[-row,]$Name) {
+    if (data[row, "Name"][[1]] %in% data[-row, ]$Name) {
       stop(paste("Can't use the same name as other lists!"))
     }
     zz <- file(outfile, "wb") # create temporary file
@@ -236,7 +242,7 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
   patientList.callback.update <- function(data, olddata, row) {
     outfile <- tempfile(fileext = ".csv")
     # create temporary file name
-    if (data[row, "Name"][[1]] %in% data[-row,]$Name) {
+    if (data[row, "Name"][[1]] %in% data[-row, ]$Name) {
       stop(paste("Can't use the same name as other lists!"))
     }
     zz <- file(outfile, "wb") # create temporary file
@@ -294,7 +300,6 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
       )
     }
   )
-
 }
 
 #' Custom module - UI function
@@ -313,16 +318,21 @@ datatableUI <- function(id) {
 
   shiny::tagList(
     shiny::fluidRow(
-      shiny::column(4,
-                    shinyWidgets::switchInput(
-                      inputId = ns("printcopy_view"),
-                      label = paste("<i class=\"fas fa-print\"></i>",
-                                    "<i class=\"far fa-copy\"></i>",
-                                    "  Print and Copy View"),
-                      labelWidth = "12em",
-                      width = "20em")
+      shiny::column(
+        4,
+        shinyWidgets::switchInput(
+          inputId = ns("printcopy_view"),
+          label = paste(
+            "<i class=\"fas fa-print\"></i>",
+            "<i class=\"far fa-copy\"></i>",
+            "  Print and Copy View"
+          ),
+          labelWidth = "12em",
+          width = "20em"
+        )
       ),
-      shiny::column(2,
+      shiny::column(
+        2,
         offset = 3,
         shiny::uiOutput(ns("patientListNames"))
       )
@@ -335,6 +345,8 @@ datatableUI <- function(id) {
     )
   )
 }
+
+.reactive(dMeasureCustom, "printcopy_view", TRUE)
 
 #' Custom module - server
 #'
@@ -349,7 +361,6 @@ datatableUI <- function(id) {
 #'
 #' @export
 datatableServer <- function(input, output, session, dMCustom) {
-
   ns <- session$ns
 
   output$patientListNames <- shiny::renderUI({
@@ -377,6 +388,9 @@ datatableServer <- function(input, output, session, dMCustom) {
     }
   })
 
+  shiny::observeEvent(input$printcopy_view, ignoreNULL = TRUE, {
+    dMCustom$printcopy_view(input$printcopy_view)
+  })
   shiny::observeEvent(input$patientList_chosen, ignoreNULL = FALSE, {
     dMCustom$chosen_patientList <- input$patientList_chosen
   })
@@ -388,9 +402,21 @@ datatableServer <- function(input, output, session, dMCustom) {
         "No appointments in selected range"
       )
     )
-    DailyMeasure::datatable_styled(
-      dMCustom$appointments_patientListR()
-    )
+    if (input$printcopy_view == TRUE) {
+      DailyMeasure::datatable_styled(
+        dMCustom$appointments_patientListR()
+      )
+    } else {
+      escape_column <- which(
+        names(dMCustom$appointments_patientListR()) == "List"
+      )
+      DailyMeasure::datatable_styled(
+        dMCustom$appointments_patientListR(),
+        escape = c(escape_column),
+        copyHtml5 = NULL, printButton = NULL,
+        downloadButton = NULL # no copy/print buttons
+      )
+    }
   })
 
   output$custom_table <- DT::renderDT({
@@ -500,12 +526,12 @@ write_patientList <- function(
     keepAllColumns
   )
 }
-.public(dMeasureCustom, "write_patientList",
+.public(
+  dMeasureCustom, "write_patientList",
   function(
     name, filename,
     column_ID = "ID", column_Label = "Label",
-    keepAllColumns = FALSE
-  ) {
+    keepAllColumns = FALSE) {
     # write patient list to configuration database
 
     if (name %in% (self$patientList$Name)) {
@@ -620,102 +646,102 @@ update_patientList <- function(
     keepAllColumns, ID
   )
 }
-.public(dMeasureCustom, "update_patientList",
-        function(
-          name, filename,
-          column_ID = "ID", column_Label = "Label",
-          keepAllColumns = FALSE, ID = NULL
-        ) {
-          # write patient list to configuration database
+.public(
+  dMeasureCustom, "update_patientList",
+  function(
+    name, filename,
+    column_ID = "ID", column_Label = "Label",
+    keepAllColumns = FALSE, ID = NULL) {
+    # write patient list to configuration database
 
-          if (!is.null(ID)) {
-            # ID has been defined
-            if (name %in% (self$patientList[self$patientList$id != ID, ]$Name)) {
-              # this name already chosen with a different ID
-              stop("'", name, "' already exists as a named patient list.")
-            }
-            # otherwise, we are going to change the name
-          } else {
-            # ID has *not* been defined, we need to find the ID
-            # hopefully, the 'name' will help find the ID
-            ID <- which(name == self$patientList$Name)
-            if (length(ID) == 0) {
-              # length will == 1 if an ID was found
-              # ID == numeric(0) if not found
-              stop("'", name, "' does not define a patient list, and ID not provided.")
-            }
-          }
+    if (!is.null(ID)) {
+      # ID has been defined
+      if (name %in% (self$patientList[self$patientList$id != ID, ]$Name)) {
+        # this name already chosen with a different ID
+        stop("'", name, "' already exists as a named patient list.")
+      }
+      # otherwise, we are going to change the name
+    } else {
+      # ID has *not* been defined, we need to find the ID
+      # hopefully, the 'name' will help find the ID
+      ID <- which(name == self$patientList$Name)
+      if (length(ID) == 0) {
+        # length will == 1 if an ID was found
+        # ID == numeric(0) if not found
+        stop("'", name, "' does not define a patient list, and ID not provided.")
+      }
+    }
 
-          if (!file.exists(filename)) {
-            stop("'", filename, "' does not exist.")
-          }
+    if (!file.exists(filename)) {
+      stop("'", filename, "' does not exist.")
+    }
 
-          read_csv_success <- TRUE # by default
-          tryCatch(
-            d <- read.csv(filename, stringsAsFactors = FALSE),
-            error = function(e) {
-              warning(e)
-              read_csv_success <<- FALSE
-            }
-          )
-          if (!read_csv_success) {
-            stop("Unable to read file '", filename, "' as CSV.")
-          }
-          if (!exists(column_ID, d) || !exists(column_Label, d)) {
-            stop(
-              "File does not contain 'ID' and 'Label' column",
-              " names '", column_ID, "' and '", column_Label, "'."
-            )
-          }
+    read_csv_success <- TRUE # by default
+    tryCatch(
+      d <- read.csv(filename, stringsAsFactors = FALSE),
+      error = function(e) {
+        warning(e)
+        read_csv_success <<- FALSE
+      }
+    )
+    if (!read_csv_success) {
+      stop("Unable to read file '", filename, "' as CSV.")
+    }
+    if (!exists(column_ID, d) || !exists(column_Label, d)) {
+      stop(
+        "File does not contain 'ID' and 'Label' column",
+        " names '", column_ID, "' and '", column_Label, "'."
+      )
+    }
 
-          d <- d %>>%
-            dplyr::mutate(
-              ID = !!as.symbol(column_ID),
-              # patient identification IDs (internal ID)
-              #
-              # not that this ID is not the same as the
-              # ID of the patient list!
-              Label = !!as.symbol(column_Label)
-            ) # converts column names to 'ID' and 'Label'
-          if (!keepAllColumns) {
-            # if keepAllColumns is TRUE, then extra original
-            # columns are kept, which would take more storage space
-            # to store
-            d <- d %>>%
-              dplyr::select(ID, Label)
-          }
+    d <- d %>>%
+      dplyr::mutate(
+        ID = !!as.symbol(column_ID),
+        # patient identification IDs (internal ID)
+        #
+        # not that this ID is not the same as the
+        # ID of the patient list!
+        Label = !!as.symbol(column_Label)
+      ) # converts column names to 'ID' and 'Label'
+    if (!keepAllColumns) {
+      # if keepAllColumns is TRUE, then extra original
+      # columns are kept, which would take more storage space
+      # to store
+      d <- d %>>%
+        dplyr::select(ID, Label)
+    }
 
-          query <- paste(
-            "UPDATE CustomPatientLists SET",
-            "Name = $name, patientList = $patientList",
-            "WHERE id = $id"
-          )
-          data_for_sql <- list(
-            name = name,
-            patientList = data.frame(
-              data = I(serialize(d, NULL, xdr = FALSE, version = 3))
-            ),
-            id = ID
-            # data.frame(data = I(serialize(d))) creates the 'single' object that
-            # dbSendQuery wants
-            # strangely, the data can be read as follow (for the first row)
-            # x <- DBI::dbReadTable(dM$config_db$conn(), "CustomPatientLists")
-            # x$patientList[1] - returns 'blob'
-            # x$patientList[[1]] - returns raw
-            # unserialize(x$patientList[[1]]) - returns dataframe
-            # referring to 'data' as a column seems unnecessary!
-          )
+    query <- paste(
+      "UPDATE CustomPatientLists SET",
+      "Name = $name, patientList = $patientList",
+      "WHERE id = $id"
+    )
+    data_for_sql <- list(
+      name = name,
+      patientList = data.frame(
+        data = I(serialize(d, NULL, xdr = FALSE, version = 3))
+      ),
+      id = ID
+      # data.frame(data = I(serialize(d))) creates the 'single' object that
+      # dbSendQuery wants
+      # strangely, the data can be read as follow (for the first row)
+      # x <- DBI::dbReadTable(dM$config_db$conn(), "CustomPatientLists")
+      # x$patientList[1] - returns 'blob'
+      # x$patientList[[1]] - returns raw
+      # unserialize(x$patientList[[1]]) - returns dataframe
+      # referring to 'data' as a column seems unnecessary!
+    )
 
-          self$dM$config_db$dbSendQuery(query, data_for_sql)
+    self$dM$config_db$dbSendQuery(query, data_for_sql)
 
-          self$patientList <-
-            DBI::dbReadTable(self$dM$config_db$conn(), "CustomPatientLists")
-          # re-read patient list
-          private$set_reactive(self$patientListNamesR, self$patientList$Name)
-          # set names of patient lists
+    self$patientList <-
+      DBI::dbReadTable(self$dM$config_db$conn(), "CustomPatientLists")
+    # re-read patient list
+    private$set_reactive(self$patientListNamesR, self$patientList$Name)
+    # set names of patient lists
 
-          return(ID)
-        }
+    return(ID)
+  }
 )
 
 #' remove patient list from configuration database
@@ -731,7 +757,8 @@ remove_patientList <- function(dMeasureCustom_obj, name) {
     name
   )
 }
-.public(dMeasureCustom, "remove_patientList",
+.public(
+  dMeasureCustom, "remove_patientList",
   function(name) {
     # remove patient list from configuration database
 
@@ -771,27 +798,50 @@ add_customTags <- function(
   chosen_patientList,
   patient_list,
   screentag = FALSE,
-  screentag_print = TRUE
-) {
+  screentag_print = TRUE) {
 
-  patient_list <- patient_list %>>%
-    dplyr::mutate(screentag_print = NA) # prepare to be filled!
+    if (screentag_print) {
+    patient_list <- patient_list %>>%
+      dplyr::mutate(screentag_print = NA) # prepare to be filled!
+  } else if (screentag) {
+    patient_list <- patient_list %>>%
+      dplyr::mutate(screentag = NA)
+  }
+
   for (i in chosen_patientList) {
     # go through patientLists, add column labels one-by-one
     j <- match(i, custom_patientLists$Name)
     patient_list <- patient_list %>>%
       dplyr::left_join(
         unserialize(custom_patientLists$patientList[[j]]),
-        by = c("InternalID" = "ID")) %>>%
-      dplyr::mutate(
-        screentag_print = dMeasure::paste2(
-          screentag_print,
-          Label,
-          na.rm = TRUE, sep = ", "
+        by = c("InternalID" = "ID")
+      )
+    if (screentag_print) {
+      patient_list <- patient_list %>>%
+        dplyr::mutate(
+          screentag_print = dMeasure::paste2(
+            screentag_print,
+            Label,
+            na.rm = TRUE, sep = ", "
+          )
+          # sequentially added, separated by commas
         )
-        # sequentially added, separated by commas
-      ) %>>%
+    } else if (screentag) {
+      patient_list <- patient_list %>>%
+        dplyr::mutate(
+          screentag = dMeasure::paste2(
+            screentag,
+            dMeasure::semantic_tag(
+              trimws(Label),
+              colour = "green"
+            ),
+            na.rm = TRUE, sep = ""
+          )
+        )
+    }
+    patient_list <- patient_list %>>%
       dplyr::select(-c("Label"))
+    # need to remove Label column before next iteration
   }
 
   return(patient_list)
@@ -801,22 +851,49 @@ add_customTags <- function(
 #'
 #'  derived from dM$appointments_filtered_time
 #'
+#' @md
+#'
 #' @param dMeasureCustom_obj R6 object
 #' @param chosen_patientList names of chosen custom patient lists
+#' @param screentag if neither `screentag` or `screentag_print` is
+#'     defined then values are derived from `self$printcopy_view`
+#' @param screentag_print
 #'
 #' @return dataframe of apppointments
 #'  $Patient, $AppointmentDate, $AppointmentTime,
 #'  $Provider, $Status, $Label
 #'
 #' @export
-appointments_patientList <- function(dMeasureCustom_obj, chosen_patientList = NA) {
-  dMeasureCustom_obj$appointments_patientList(chosen_patientList)
+appointments_patientList <- function(
+  dMeasureCustom_obj,
+  chosen_patientList = NA,
+  screentag = NA,
+  screentag_print = NA) {
+  dMeasureCustom_obj$appointments_patientList(
+    chosen_patientList,
+    screentag,
+    screentag_print
+  )
 }
-.public(dMeasureCustom, "appointments_patientList",
-  function(chosen_patientList = NA) {
-
+.public(
+  dMeasureCustom, "appointments_patientList",
+  function(
+    chosen_patientList = NA,
+    screentag = NA,
+    screentag_print = NA
+  ) {
     if (is.na(chosen_patientList)) {
       chosen_patientList <- self$chosen_patientList
+    }
+    if (is.na(screentag) && is.na(screentag_print)) {
+      # if neither defined
+      screentag <- !self$printcopy_view()
+      screentag_print <- self$printcopy_view()
+    } else if ((is.na(screentag) && screentag_print == FALSE) ||
+               (is.na(screentag_print) && screentag == FALSE)) {
+      stop("One of 'screentag' or 'screentag_print' must be set to TRUE")
+    } else if (screentag && screentag_print) {
+      stop("Only one of 'screentag' or 'screentag_print' can be set to TRUE")
     }
 
     intID <- c(-1) # create vector of intID in the chosen custom lists
@@ -826,7 +903,7 @@ appointments_patientList <- function(dMeasureCustom_obj, chosen_patientList = NA
       intID <- c(
         intID,
         unserialize(self$patientList$patientList[[j]])$ID
-        )
+      )
     }
 
     l <- self$dM$appointments_filtered_time %>>%
@@ -836,14 +913,23 @@ appointments_patientList <- function(dMeasureCustom_obj, chosen_patientList = NA
       self$patientList,
       chosen_patientList,
       l,
-      screentag = FALSE,
-      screentag_print = TRUE
+      screentag = screentag,
+      screentag_print = screentag_print
     )
 
+    if (screentag) {
+      l <- l %>>%
+        dplyr::rename(List = screentag)
+    } else if (screentag_print) {
+      l <- l %>>%
+        dplyr::rename(List = screentag_print)
+    }
+
     l <- l %>>%
-      dplyr::rename(Label = screentag_print) %>>%
-      dplyr::select(Patient, AppointmentDate, AppointmentTime,
-        Provider, Status, Label)
+      dplyr::select(
+        Patient, AppointmentDate, AppointmentTime,
+        Provider, Status, List
+      )
 
     return(l)
   }
@@ -854,7 +940,8 @@ appointments_patientList <- function(dMeasureCustom_obj, chosen_patientList = NA
     shiny::eventReactive(
       c(
         self$chosen_patientListR(),
-        self$dM$appointments_filtered_timeR()
+        self$dM$appointments_filtered_timeR(),
+        self$printcopy_view()
       ), {
         self$appointments_patientList()
       }
