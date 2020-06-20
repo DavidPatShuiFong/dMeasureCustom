@@ -162,7 +162,7 @@ dMeasureConfigurationTabPanelUI <- function(id) {
       DTedit::dteditmodUI(ns("customPatientLists"))
     ),
     shiny::br(),
-    shiny::h2("Custom Patient List"),
+    shiny::uiOutput(ns("viewedListName")),
     shiny::fluidRow(
       DT::dataTableOutput(ns("showSpreadsheet"))
     )
@@ -185,6 +185,10 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
   ns <- session$ns
 
   viewedList <- shiny::reactiveVal(NULL)
+  viewedListName <- shiny::reactiveVal("")
+  output$viewedListName <- shiny::renderUI({
+    shiny::h4(paste("Custom Patient List :", viewedListName()))
+  })
   # the currently viewed list. columns are ID and Label
   patientList.callback.actionButton <- function(data, row, buttonID) {
     # data - the current copy of 'thedata'
@@ -194,6 +198,7 @@ dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
     if (substr(buttonID, 1, nchar("view")) == "view") {
       viewedList(unserialize(data[row, "patientList"][[1]]))
       # this will set viewedList to a dataframe of ID and Label
+      viewedListName(data[row, "Name"])
     }
   }
 
