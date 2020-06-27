@@ -86,8 +86,8 @@ dMeasureCustom class
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{dMeasureCustom$appointments_patientList(
   chosen_patientList = NA,
-  screentag = NA,
-  screentag_print = NA
+  screentag = FALSE,
+  screentag_print = TRUE
 )}\if{html}{\out{</div>}}
 }
 

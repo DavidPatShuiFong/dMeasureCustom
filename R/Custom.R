@@ -494,6 +494,7 @@ read_configuration_db <- function(
   # by contrast, dbReadTable *can* handle blob columns
   # but needs to be called every time the table changes
 
+  self$patientListNames <- self$patientList$Name
   private$set_reactive(self$patientListNamesR, self$patientList$Name)
   # set to names of patient lists
   # this will also need to be called every time
@@ -502,6 +503,7 @@ read_configuration_db <- function(
   return(self$patientList)
 })
 
+.public(dMeasureCustom, "patientListNames", NULL)
 .reactive(dMeasureCustom, "patientListNamesR", NULL)
 
 #' write patient list to configuration database
@@ -860,9 +862,8 @@ add_customTags <- function(
 #'
 #' @param dMeasureCustom_obj R6 object
 #' @param chosen_patientList names of chosen custom patient lists
-#' @param screentag if neither `screentag` or `screentag_print` is
-#'     defined then values are derived from `self$printcopy_view`
-#' @param screentag_print
+#' @param screentag add HTML fomantic/semantic tags
+#' @param screentag_print add 'printable' plaintext tags
 #'
 #' @return dataframe of apppointments
 #'  $Patient, $AppointmentDate, $AppointmentTime,
@@ -872,8 +873,8 @@ add_customTags <- function(
 appointments_patientList <- function(
   dMeasureCustom_obj,
   chosen_patientList = NA,
-  screentag = NA,
-  screentag_print = NA) {
+  screentag = FALSE,
+  screentag_print = TRUE) {
   dMeasureCustom_obj$appointments_patientList(
     chosen_patientList,
     screentag,
@@ -884,18 +885,13 @@ appointments_patientList <- function(
   dMeasureCustom, "appointments_patientList",
   function(
     chosen_patientList = NA,
-    screentag = NA,
-    screentag_print = NA
+    screentag = FALSE,
+    screentag_print = TRUE
   ) {
     if (is.na(chosen_patientList)) {
       chosen_patientList <- self$chosen_patientList
     }
-    if (is.na(screentag) && is.na(screentag_print)) {
-      # if neither defined
-      screentag <- !self$printcopy_view()
-      screentag_print <- self$printcopy_view()
-    } else if ((is.na(screentag) && screentag_print == FALSE) ||
-               (is.na(screentag_print) && screentag == FALSE)) {
+    if (!screentag && !screentag_print) {
       stop("One of 'screentag' or 'screentag_print' must be set to TRUE")
     } else if (screentag && screentag_print) {
       stop("Only one of 'screentag' or 'screentag_print' can be set to TRUE")
@@ -948,7 +944,10 @@ appointments_patientList <- function(
         self$dM$appointments_filtered_timeR(),
         self$printcopy_view()
       ), {
-        self$appointments_patientList()
+        self$appointments_patientList(
+          screentag = !self$printcopy_view(),
+          screentag_print = self$printcopy_view()
+        )
       }
     )
   )

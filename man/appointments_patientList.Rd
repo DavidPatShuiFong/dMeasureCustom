@@ -7,8 +7,8 @@
 appointments_patientList(
   dMeasureCustom_obj,
   chosen_patientList = NA,
-  screentag = NA,
-  screentag_print = NA
+  screentag = FALSE,
+  screentag_print = TRUE
 )
 }
 \arguments{
@@ -16,10 +16,9 @@ appointments_patientList(
 
 \item{chosen_patientList}{names of chosen custom patient lists}
 
-\item{screentag}{if neither \code{screentag} or \code{screentag_print} is
-defined then values are derived from \code{self$printcopy_view}}
+\item{screentag}{add HTML fomantic/semantic tags}
 
-\item{screentag_print}{}
+\item{screentag_print}{add 'printable' plaintext tags}
 }
 \value{
 dataframe of apppointments
