@@ -4,7 +4,7 @@
 \alias{\%>>\%}
 \title{Pipe operator pipeR}
 \usage{
-lhs \%>>\% rhs
+x \%>>\% expr
 }
 \description{
 #' See \code{pipeR::\link[pipeR]{\%>>\%}} for details.
