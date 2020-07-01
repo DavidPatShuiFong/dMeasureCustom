@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 1.0.0 
+## 1.0.0
 19th June 2020
 
 * custom patient lists can be imported as CSV file
