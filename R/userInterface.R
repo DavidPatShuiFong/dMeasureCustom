@@ -323,25 +323,48 @@ datatableServer <- function(input, output, session, dMCustom) {
     } else {
       shinyWidgets::dropdown(
         inputId = ns("choice_dropdown"),
-        shinyWidgets::checkboxGroupButtons(
-          inputId = ns("patientList_chosen"),
-          label = "Patient lists shown",
-          choices = dMCustom$patientListNamesR(),
-          selected = NULL,
-          status = "primary",
-          checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
-        ),
         icon = shiny::icon("gear"),
-        label = "Patient lists"
+        label = "Patient lists",
+        shiny::actionButton(
+          inputId = ns("view_patientLists"),
+          label = "Change patient lists"
+        )
       )
     }
   })
+  shiny::observeEvent(
+    input$view_patientLists,
+    ignoreInit = TRUE, {
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Patient lists",
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns("patientList_chosen"),
+            label = "Patient lists shown",
+            choices = dMCustom$patientListNamesR(),
+            selected = NULL,
+            status = "primary",
+            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+          ),
+          easyClose = FALSE,
+          footer = tagList(
+            modalButton("Cancel"),
+            actionButton(ns("patientLists_ok"), "OK")
+          )
+        )
+      )
+
+    }
+  )
+  shiny::observeEvent(
+    input$patientLists_ok, {
+      dMCustom$chosen_patientList <- input$patientList_chosen
+      shiny::removeModal()
+    }
+  )
 
   shiny::observeEvent(input$printcopy_view, ignoreNULL = TRUE, {
     dMCustom$printcopy_view(input$printcopy_view)
-  })
-  shiny::observeEvent(input$patientList_chosen, ignoreNULL = FALSE, {
-    dMCustom$chosen_patientList <- input$patientList_chosen
   })
 
   styled_custom_list <- shiny::reactive({
