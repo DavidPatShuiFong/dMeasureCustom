@@ -8,6 +8,22 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## 1.0.1
+3rd July
+
+### Improvements
+
+* custom list names cannot be empty string ""
+
+### Bugfix
+
+* `patientList.callback.update` handles changes of `Name` only
+  + previously did not handle properly if `patientList` was unchanged
+
+### Changes
+
+* source from `Custom.R` partly moved t o `methods.R` and `userInterface.R`
+
 
 ## 1.0.0
 19th June 2020
