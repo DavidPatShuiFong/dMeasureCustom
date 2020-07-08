@@ -5,7 +5,7 @@ Version: 1.0.1
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: List services (billings) provided by clinicians
-License: LICENSE
+License: file LICENSE Mozilla Public License v2.0
 Encoding: UTF-8
 LazyData: true
 Imports:

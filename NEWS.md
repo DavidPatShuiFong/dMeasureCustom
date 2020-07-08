@@ -9,11 +9,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ## 1.0.1
-3rd July
+8th July
 
 ### Changes
 
 * patient lists are chosen via a modal (so not updated with each 'click/unclick')
+* formally change license to Mozilla Public License 2.0
 
 ### Improvements
 
