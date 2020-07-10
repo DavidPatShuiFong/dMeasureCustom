@@ -1,11 +1,11 @@
 Package: dMeasureCustom
 Type: Package
 Title: Custom patient list module for dMeasure
-Version: 1.0.0
+Version: 1.0.1
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: List services (billings) provided by clinicians
-License: LICENSE
+License: file LICENSE Mozilla Public License v2.0
 Encoding: UTF-8
 LazyData: true
 Imports:
@@ -23,4 +23,6 @@ RoxygenNote: 7.1.0.9000
 Collate: 
     'r6_helpers.R'
     'Custom.R'
+    'methods.R'
+    'userInterface.R'
     'utils-pipe.R'
