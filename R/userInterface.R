@@ -19,12 +19,14 @@ NULL
 #'
 #' @export
 shinydashboardmenuItem <- function() {
-  return(
+  x <- list(
     shinydashboard::menuItem(
       "Custom",
-      tabName = "custom", icon = shiny::icon("cocktail")
+      tabName = "custom",
+      icon = shiny::icon("cocktail")
     )
   )
+  return(x)
 }
 
 #' center panel description
@@ -44,7 +46,7 @@ dMeasureShinytabItems <- function() {
       )),
       shiny::fluidRow(shiny::column(
         width = 12,
-        dMeasureCustom::datatableUI("custom_dt")
+        dMeasureCustom::datatableUI("Custom_dt")
       ))
     )
   )
@@ -57,16 +59,19 @@ dMeasureShinytabItems <- function() {
 #'
 #' @export
 dMeasureConfigurationTabPanelItem <- function() {
-  shiny::tabPanel(
-    title = "Custom patient lists",
-    value = "CustomPatientLists",
-    shiny::column(
-      width = 12,
-      dMeasureCustom::dMeasureConfigurationTabPanelUI(
-        "dMeasureCustom_config_dt"
+  x <- list(
+    shiny::tabPanel(
+      title = "Custom patient lists",
+      value = "CustomPatientLists",
+      shiny::column(
+        width = 12,
+        dMeasureCustom::dMeasureConfigurationTabPanelUI(
+          "dMeasureCustom_config_dt"
+        )
       )
     )
   )
+  return(x)
 }
 
 #' Custom module - configuration panel UI
@@ -97,163 +102,164 @@ dMeasureConfigurationTabPanelUI <- function(id) {
 #'
 #' @name dMeasureConfigurationTabPanel
 #'
-#' @param input as required by Shiny modules
-#' @param output as required by Shiny modules
-#' @param session as required by Shiny modules
+#' @param id as required by Shiny modules
 #' @param dMCustom dMeasureCustom R6 object
 #'
 #' @return none
 #'
 #' @export
-dMeasureConfigurationTabPanel <- function(input, output, session, dMCustom) {
-  ns <- session$ns
+dMeasureConfigurationTabPanel <- function(id, dMCustom) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
 
-  viewedList <- shiny::reactiveVal(NULL)
-  viewedListName <- shiny::reactiveVal("")
-  output$viewedListName <- shiny::renderUI({
-    shiny::h4(paste("Custom Patient List :", viewedListName()))
-  })
-  # the currently viewed list. columns are ID and Label
-  patientList.callback.actionButton <- function(data, row, buttonID) {
-    # data - the current copy of 'thedata'
-    # row - the row number of the clicked button
-    # buttonID - the buttonID of the clicked button
+    viewedList <- shiny::reactiveVal(NULL)
+    viewedListName <- shiny::reactiveVal("")
+    output$viewedListName <- shiny::renderUI({
+      shiny::h4(paste("Custom Patient List :", viewedListName()))
+    })
+    # the currently viewed list. columns are ID and Label
+    patientList.callback.actionButton <- function(data, row, buttonID) {
+      # data - the current copy of 'thedata'
+      # row - the row number of the clicked button
+      # buttonID - the buttonID of the clicked button
 
-    if (substr(buttonID, 1, nchar("view")) == "view") {
-      viewedList(unserialize(data[row, "patientList"][[1]]))
-      # this will set viewedList to a dataframe of ID and Label
-      viewedListName(data[row, "Name"])
-    }
-  }
-
-  spreadsheet <- shiny::reactiveVal(NULL)
-  shiny::observeEvent(
-    viewedList(),
-    ignoreNULL = TRUE, {
-      intID <- c(-1, viewedList()$ID)
-      spreadsheet(
-        viewedList() %>>%
-          dplyr::left_join(
-            dMCustom$dM$db$patients %>>%
-              dplyr::filter(InternalID %in% intID) %>>%
-              dplyr::select(InternalID, Firstname, Surname, DOB),
-            by = c("ID" = "InternalID"), copy = TRUE
-          ) %>>%
-          dplyr::mutate(DOB = as.Date(DOB))
-      )
-    }
-  )
-  output$showSpreadsheet <- DT::renderDT({
-    DailyMeasure::datatable_styled(spreadsheet())
-  })
-
-  patientList.callback.insert <- function(data, row) {
-    outfile <- tempfile(fileext = ".csv")
-    # create temporary file name
-    if (data[row, "Name"][[1]] %in% data[-row, ]$Name) {
-      stop(paste("Can't use the same name as other lists!"))
-    }
-    if (data[row, "Name"][[1]] == "") {
-      stop(paste("Name cannot be empty!"))
+      if (substr(buttonID, 1, nchar("view")) == "view") {
+        viewedList(unserialize(data[row, "patientList"][[1]]))
+        # this will set viewedList to a dataframe of ID and Label
+        viewedListName(data[row, "Name"])
+      }
     }
 
-    zz <- file(outfile, "wb") # create temporary file
-    writeBin(object = unlist(data[row, "patientList"]), con = zz)
-    # currently "patientList" column contains a binary blob of a file
-    close(zz) # outputs the inserted CSV into a temporary file
-
-    newID <- dMCustom$write_patientList(data[row, "Name"][[1]], outfile)
-    # write_patientList also sets dMCustom$patientList
-    data <- dMCustom$patientList # read the database back in
-
-    # cleanup (remove the temporary file)
-    file.remove(outfile)
-
-    return(data)
-  }
-
-  patientList.callback.update <- function(data, olddata, row) {
-    outfile <- tempfile(fileext = ".csv")
-    # create temporary file name
-    if (data[row, "Name"][[1]] %in% data[-row, ]$Name) {
-      stop(paste("Can't use the same name as other lists!"))
-    }
-    if (data[row, "Name"][[1]] == "") {
-      stop(paste("Name cannot be empty!"))
-    }
-
-    zz <- file(outfile, "wb") # create temporary file
-    tryCatch(
-      {
-        x <- unserialize(unlist(data[row, "patientList"]))
-        # can only be unserialized if this is a serialized object
-        # however, if this is a *new* CSV file, then the object
-        #  is actually a CSV file, and 'unserialize' will throw an error
-        # "patientList" is a serialized object if, for example, only
-        #  the 'Name' is changed, but no new CSV file was imported
-        write.csv(x, file = zz)
-      },
-      error = function(e) {
-        # the data is not a serialized object,
-        # so this is a CSV file
-        writeBin(object = unlist(data[row, "patientList"]), con = zz)
-        # "patientList" column contains a binary blob of a CSV file
+    spreadsheet <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(
+      viewedList(),
+      ignoreNULL = TRUE, {
+        intID <- c(-1, viewedList()$ID)
+        spreadsheet(
+          viewedList() %>>%
+            dplyr::left_join(
+              dMCustom$dM$db$patients %>>%
+                dplyr::filter(InternalID %in% intID) %>>%
+                dplyr::select(InternalID, Firstname, Surname, DOB),
+              by = c("ID" = "InternalID"), copy = TRUE
+            ) %>>%
+            dplyr::mutate(DOB = as.Date(DOB))
+        )
       }
     )
-    close(zz) # outputs the inserted CSV into a temporary file
+    output$showSpreadsheet <- DT::renderDT({
+      DailyMeasure::datatable_styled(spreadsheet())
+    })
 
-    tryCatch(
-      result <- dMCustom$update_patientList(
-        name = data[row, "Name"][[1]],
-        # name might have been changed!
-        filename = outfile,
-        ID = data[row, "id"]
-      ),
-      error = function(e) stop(e)
-    )
+    patientList.callback.insert <- function(data, row) {
+      outfile <- tempfile(fileext = ".csv")
+      # create temporary file name
+      if (data[row, "Name"][[1]] %in% data[-row, ]$Name) {
+        stop(paste("Can't use the same name as other lists!"))
+      }
+      if (data[row, "Name"][[1]] == "") {
+        stop(paste("Name cannot be empty!"))
+      }
 
-    data <- dMCustom$patientList # read the database back in
+      zz <- file(outfile, "wb") # create temporary file
+      writeBin(object = unlist(data[row, "patientList"]), con = zz)
+      # currently "patientList" column contains a binary blob of a file
+      close(zz) # outputs the inserted CSV into a temporary file
 
-    # cleanup (remove the temporary file)
-    file.remove(outfile)
+      newID <- dMCustom$write_patientList(data[row, "Name"][[1]], outfile)
+      # write_patientList also sets dMCustom$patientList
+      data <- dMCustom$patientList # read the database back in
 
-    return(data)
-  }
+      # cleanup (remove the temporary file)
+      file.remove(outfile)
 
-  patientList.callback.delete <- function(data, row) {
-    dMCustom$remove_patientList(data[row, "Name"][[1]])
-    data <- dMCustom$patientList # read the database back in
-
-    return(data)
-  }
-
-  shiny::observeEvent(
-    dMCustom$patientListNamesR(),
-    ignoreNULL = TRUE, once = TRUE, {
-      shiny::callModule(
-        DTedit::dteditmod,
-        "customPatientLists",
-        thedata = dMCustom$patientList,
-        view.cols = c("id", "Name"),
-        edit.cols = c("Name", "patientList"),
-        edit.label.cols = c("Name of List", "Patient List (.csv), must have 'ID' and 'Label' columns"),
-        input.choices = list(patientList = ".csv"),
-        show.copy = FALSE,
-        action.buttons = list(
-          viewlist = list(
-            columnLabel = "View Patient List",
-            buttonLabel = "View",
-            buttonPrefix = "view"
-          )
-        ),
-        callback.actionButton = patientList.callback.actionButton,
-        callback.insert = patientList.callback.insert,
-        callback.delete = patientList.callback.delete,
-        callback.update = patientList.callback.update
-      )
+      return(data)
     }
-  )
+
+    patientList.callback.update <- function(data, olddata, row) {
+      outfile <- tempfile(fileext = ".csv")
+      # create temporary file name
+      if (data[row, "Name"][[1]] %in% data[-row, ]$Name) {
+        stop(paste("Can't use the same name as other lists!"))
+      }
+      if (data[row, "Name"][[1]] == "") {
+        stop(paste("Name cannot be empty!"))
+      }
+
+      zz <- file(outfile, "wb") # create temporary file
+      tryCatch(
+        {
+          x <- unserialize(unlist(data[row, "patientList"]))
+          # can only be unserialized if this is a serialized object
+          # however, if this is a *new* CSV file, then the object
+          #  is actually a CSV file, and 'unserialize' will throw an error
+          # "patientList" is a serialized object if, for example, only
+          #  the 'Name' is changed, but no new CSV file was imported
+          write.csv(x, file = zz)
+        },
+        error = function(e) {
+          # the data is not a serialized object,
+          # so this is a CSV file
+          writeBin(object = unlist(data[row, "patientList"]), con = zz)
+          # "patientList" column contains a binary blob of a CSV file
+        }
+      )
+      close(zz) # outputs the inserted CSV into a temporary file
+
+      tryCatch(
+        result <- dMCustom$update_patientList(
+          name = data[row, "Name"][[1]],
+          # name might have been changed!
+          filename = outfile,
+          ID = data[row, "id"]
+        ),
+        error = function(e) stop(e)
+      )
+
+      data <- dMCustom$patientList # read the database back in
+
+      # cleanup (remove the temporary file)
+      file.remove(outfile)
+
+      return(data)
+    }
+
+    patientList.callback.delete <- function(data, row) {
+      dMCustom$remove_patientList(data[row, "Name"][[1]])
+      data <- dMCustom$patientList # read the database back in
+
+      return(data)
+    }
+
+    shiny::observeEvent(
+      dMCustom$patientListNamesR(),
+      ignoreNULL = TRUE, once = TRUE, {
+        shiny::callModule(
+          DTedit::dteditmod,
+          "customPatientLists",
+          thedata = dMCustom$patientList,
+          view.cols = c("id", "Name"),
+          edit.cols = c("Name", "patientList"),
+          edit.label.cols = c("Name of List", "Patient List (.csv), must have 'ID' and 'Label' columns"),
+          input.choices = list(patientList = ".csv"),
+          show.copy = FALSE,
+          action.buttons = list(
+            viewlist = list(
+              columnLabel = "View Patient List",
+              buttonLabel = "View",
+              buttonPrefix = "view"
+            )
+          ),
+          callback.actionButton = patientList.callback.actionButton,
+          callback.insert = patientList.callback.insert,
+          callback.delete = patientList.callback.delete,
+          callback.update = patientList.callback.update
+        )
+      }
+    )
+  })
 }
+
 
 #' Custom module - UI function
 #'
@@ -305,97 +311,98 @@ datatableUI <- function(id) {
 #'
 #' @name datatableServer
 #'
-#' @param input as required by Shiny modules
-#' @param output as required by Shiny modules
-#' @param session as required by Shiny modules
+#' @param id id
 #' @param dMCustom dMeasureCustom R6 object
 #'
 #' @return none
 #'
 #' @export
-datatableServer <- function(input, output, session, dMCustom) {
-  ns <- session$ns
+datatableServer <- function(id, dMCustom) {
 
-  output$patientListNames <- shiny::renderUI({
-    if (is.null(dMCustom$patientListNamesR())) {
-      shinyWidgets::dropdown(
-        inputId = ns("choice_dropdown"),
-        "No patient lists defined",
-        icon = shiny::icon("gear"),
-        label = "Patient lists"
-      )
-    } else {
-      shinyWidgets::dropdown(
-        inputId = ns("choice_dropdown"),
-        icon = shiny::icon("gear"),
-        label = "Patient lists",
-        shiny::actionButton(
-          inputId = ns("view_patientLists"),
-          label = "Change patient lists"
+  shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    output$patientListNames <- shiny::renderUI({
+      if (is.null(dMCustom$patientListNamesR())) {
+        shinyWidgets::dropdown(
+          inputId = ns("choice_dropdown"),
+          "No patient lists defined",
+          icon = shiny::icon("gear"),
+          label = "Patient lists"
         )
-      )
-    }
-  })
-  shiny::observeEvent(
-    input$view_patientLists,
-    ignoreInit = TRUE, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Patient lists",
-          shinyWidgets::checkboxGroupButtons(
-            inputId = ns("patientList_chosen"),
-            label = "Patient lists shown",
-            choices = dMCustom$patientListNamesR(),
-            selected = NULL,
-            status = "primary",
-            checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
-          ),
-          easyClose = FALSE,
-          footer = tagList(
-            modalButton("Cancel"),
-            actionButton(ns("patientLists_ok"), "OK")
+      } else {
+        shinyWidgets::dropdown(
+          inputId = ns("choice_dropdown"),
+          icon = shiny::icon("gear"),
+          label = "Patient lists",
+          shiny::actionButton(
+            inputId = ns("view_patientLists"),
+            label = "Change patient lists"
           )
         )
-      )
+      }
+    })
+    shiny::observeEvent(
+      input$view_patientLists,
+      ignoreInit = TRUE, {
+        shiny::showModal(
+          shiny::modalDialog(
+            title = "Patient lists",
+            shinyWidgets::checkboxGroupButtons(
+              inputId = ns("patientList_chosen"),
+              label = "Patient lists shown",
+              choices = dMCustom$patientListNamesR(),
+              selected = dMCustom$chosen_patientList,
+              status = "primary",
+              checkIcon = list(yes = shiny::icon("ok", lib = "glyphicon"))
+            ),
+            easyClose = FALSE,
+            footer = tagList(
+              modalButton("Cancel"),
+              actionButton(ns("patientLists_ok"), "OK")
+            )
+          )
+        )
 
-    }
-  )
-  shiny::observeEvent(
-    input$patientLists_ok, {
-      dMCustom$chosen_patientList <- input$patientList_chosen
-      shiny::removeModal()
-    }
-  )
-
-  shiny::observeEvent(input$printcopy_view, ignoreNULL = TRUE, {
-    dMCustom$printcopy_view(input$printcopy_view)
-  })
-
-  styled_custom_list <- shiny::reactive({
-    shiny::validate(
-      shiny::need(
-        dMCustom$dM$appointments_filtered_timeR(),
-        "No appointments in selected range"
-      )
+      }
     )
-    if (input$printcopy_view == TRUE) {
-      DailyMeasure::datatable_styled(
-        dMCustom$appointments_patientListR()
-      )
-    } else {
-      escape_column <- which(
-        names(dMCustom$appointments_patientListR()) == "List"
-      )
-      DailyMeasure::datatable_styled(
-        dMCustom$appointments_patientListR(),
-        escape = c(escape_column),
-        copyHtml5 = NULL, printButton = NULL,
-        downloadButton = NULL # no copy/print buttons
-      )
-    }
-  })
+    shiny::observeEvent(
+      input$patientLists_ok, {
+        dMCustom$chosen_patientList <- input$patientList_chosen
+        shiny::removeModal()
+      }
+    )
 
-  output$custom_table <- DT::renderDT({
-    styled_custom_list()
+    shiny::observeEvent(input$printcopy_view, ignoreNULL = TRUE, {
+      dMCustom$printcopy_view(input$printcopy_view)
+    })
+
+    styled_custom_list <- shiny::reactive({
+      shiny::validate(
+        shiny::need(
+          dMCustom$dM$appointments_filtered_timeR(),
+          "No appointments in selected range"
+        )
+      )
+      if (input$printcopy_view == TRUE) {
+        DailyMeasure::datatable_styled(
+          dMCustom$appointments_patientListR()
+        )
+      } else {
+        escape_column <- which(
+          names(dMCustom$appointments_patientListR()) == "List"
+        )
+        DailyMeasure::datatable_styled(
+          dMCustom$appointments_patientListR(),
+          escape = c(escape_column),
+          copyHtml5 = NULL, printButton = NULL,
+          downloadButton = NULL # no copy/print buttons
+        )
+      }
+    })
+
+    output$custom_table <- DT::renderDT({
+      styled_custom_list()
+    })
   })
 }

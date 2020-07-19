@@ -4,6 +4,7 @@
 
 #' dMeasureCustom - custom module for dMeasure
 #'
+#' @md
 #'
 #' @name custom
 #' @title dMeasureCustom
@@ -11,6 +12,29 @@
 #' @include r6_helpers.R
 #' functions to help create R6 classes
 NULL
+
+#' dMeasureIntegration
+#'
+#' @name dMeasureIntegration
+#'
+#' @description integration with dMeasure
+#'   (especially DailyMeasure)
+#'
+#' @param information the information required
+#'   `Provides` - modules provided (in this case, `dMeasureCustom`)
+#'   `Requires` - the modules required (including `dMeasure`)
+#'   `moduleID` - IDs of modules to create
+#'   `configID` - IDs of configuration modules to create
+#'
+#' @return vector of required information
+#'
+#' @export
+dMeasureIntegration <- function(information) {
+  if (information == "Provides") {return(c("dMeasureCustom"))}
+  if (information == "Requires") {return(c("dMeasure"))}
+  if (information == "moduleID") {return(c("Custom_dt"))}
+  if (information == "configID") {return(c("dMeasureCustom_config_dt"))}
+}
 
 #' dMeasureCustom class
 #' @title dMeasureCustom class

@@ -8,6 +8,18 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+## 1.1.0
+19th July
+
+### New
+
+* `dMeasureIntegration` for auto-loading
+
+### Bugfix
+
+* patient list chooser now shows current list choices
+
 ## 1.0.1
 8th July
 

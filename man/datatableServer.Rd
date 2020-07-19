@@ -4,14 +4,10 @@
 \alias{datatableServer}
 \title{Custom module - server}
 \usage{
-datatableServer(input, output, session, dMCustom)
+datatableServer(id, dMCustom)
 }
 \arguments{
-\item{input}{as required by Shiny modules}
-
-\item{output}{as required by Shiny modules}
-
-\item{session}{as required by Shiny modules}
+\item{id}{id}
 
 \item{dMCustom}{dMeasureCustom R6 object}
 }

@@ -4,14 +4,10 @@
 \alias{dMeasureConfigurationTabPanel}
 \title{Custom module - configuration panel server}
 \usage{
-dMeasureConfigurationTabPanel(input, output, session, dMCustom)
+dMeasureConfigurationTabPanel(id, dMCustom)
 }
 \arguments{
-\item{input}{as required by Shiny modules}
-
-\item{output}{as required by Shiny modules}
-
-\item{session}{as required by Shiny modules}
+\item{id}{as required by Shiny modules}
 
 \item{dMCustom}{dMeasureCustom R6 object}
 }
