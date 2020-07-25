@@ -10,11 +10,15 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## 1.1.0
-19th July
+25th July
 
 ### New
 
 * `dMeasureIntegration` for auto-loading
+
+### Changes
+
+* remove use of `shinycssloaders`
 
 ### Bugfix
 

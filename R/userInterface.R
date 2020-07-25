@@ -296,12 +296,7 @@ datatableUI <- function(id) {
         shiny::uiOutput(ns("patientListNames"))
       )
     ),
-    shinycssloaders::withSpinner(
-      DT::DTOutput(ns("custom_table")),
-      type = 8,
-      hide.element.when.recalculating = FALSE,
-      proxy.height = NULL
-    )
+    DT::DTOutput(ns("custom_table"))
   )
 }
 
