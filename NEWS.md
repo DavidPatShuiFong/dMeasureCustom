@@ -9,8 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## 1.2.0
+16th October 2021
+
+### Changes
+* `initialize_configuration_db` (exported) to create/modify configuration settings in `dMeasure`'s configuration database
+
 ## 1.1.0
-25th July
+25th July 2020
 
 ### New
 
@@ -25,7 +31,7 @@ knitr::opts_chunk$set(echo = TRUE)
 * patient list chooser now shows current list choices
 
 ## 1.0.1
-8th July
+8th July 2020
 
 ### Changes
 

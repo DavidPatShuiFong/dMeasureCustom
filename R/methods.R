@@ -50,6 +50,35 @@ initialize_data_table <- function() {
   )
 }
 
+#' initialize the configuration database
+#'
+#' @name initialize_configuration_db
+#'
+#' @description create, or expand, configuration database
+#'
+#' @details Creates, if necessary, the configuration files
+#'
+#'   If necessary, also adds additional columns to existing
+#'   configuration tables
+#'
+#' @param config_db pointer to configuration database
+#'
+#' @export
+initialize_configuration_db <- function(config_db) {
+  # initialize configuration database for dMeasureCustom
+
+  if (!is.null(config_db$conn())) {
+    # configuration database is open
+    x <- dMeasureCustom::initialize_data_table()
+    dMeasure::initialize_data_table(
+      config_db,
+      tablename = x$tablename,
+      variable_list = x$variable_list
+    )
+
+  }
+}
+
 #' read the configuration database
 #'
 #' @param dMeasureCustom_obj R6 object

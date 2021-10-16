@@ -1,7 +1,7 @@
 Package: dMeasureCustom
 Type: Package
 Title: Custom patient list module for dMeasure
-Version: 1.1.0
+Version: 1.2.0
 Author: David Fong
 Maintainer: David Fong <vkelim@bigpond.com>
 Description: List services (billings) provided by clinicians
@@ -19,7 +19,7 @@ Suggests:
     shinydashboard,
     shinyWidgets,
     DT
-RoxygenNote: 7.1.0.9000
+RoxygenNote: 7.1.1
 Collate: 
     'r6_helpers.R'
     'Custom.R'
