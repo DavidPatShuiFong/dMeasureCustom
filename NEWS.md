@@ -13,7 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 16th October 2021
 
 ### Changes
-* `initialize_configuration_db` (exported) to create/modify configuration settings in `dMeasure`'s configuration database
+* `initialize_configuration_db` (exported)
+  + integraton with `dMeasure` to create/modify configuration settings
 
 ## 1.1.0
 25th July 2020

@@ -55,6 +55,9 @@ dMeasureShinytabItems <- function() {
 
 #' Custom module - configuration tabpanel item
 #'
+#' @details
+#'   This function is called by `DailyMeasure`
+#'
 #' @return tabPanel
 #'
 #' @export
@@ -77,6 +80,14 @@ dMeasureConfigurationTabPanelItem <- function() {
 #' Custom module - configuration panel UI
 #'
 #' @name dMeasureConfigurationTabPanelUI
+#'
+#' @details
+#'   This function is called by `dMeasureConfigurationTabPanelItem`,
+#'   with the same module `id` as `DailyMeasure` will
+#'   call `dMeasureConfigurationTabPanel`.
+#'
+#'   The module `id` is also returned by the integration function
+#'   `dMeasureIntegration` when called with parameter `configID`
 #'
 #' @param id module ID
 #'
@@ -101,6 +112,14 @@ dMeasureConfigurationTabPanelUI <- function(id) {
 #' Custom module - configuration panel server
 #'
 #' @name dMeasureConfigurationTabPanel
+#'
+#' @details
+#'   This (module) server is called by `DailyMeasure` with the
+#'   same module `id` as `dMeasureConfigurationTabPanelItem` will
+#'   call `dMeasureConfigurationTabPanelUI`
+#'
+#'   The module `id` is also returned by the integration function
+#'   `dMeasureIntegration` when called with the parameter `configID`
 #'
 #' @param id as required by Shiny modules
 #' @param dMCustom dMeasureCustom R6 object

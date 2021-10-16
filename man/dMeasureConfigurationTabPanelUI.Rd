@@ -15,3 +15,11 @@ shiny user interface element
 \description{
 Custom module - configuration panel UI
 }
+\details{
+This function is called by `dMeasureConfigurationTabPanelItem`,
+  with the same module `id` as `DailyMeasure` will
+  call `dMeasureConfigurationTabPanel`.
+
+  The module `id` is also returned by the integration function
+  `dMeasureIntegration` when called with parameter `configID`
+}

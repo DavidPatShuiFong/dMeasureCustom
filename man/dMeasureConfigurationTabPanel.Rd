@@ -17,3 +17,11 @@ none
 \description{
 Custom module - configuration panel server
 }
+\details{
+This (module) server is called by `DailyMeasure` with the
+  same module `id` as `dMeasureConfigurationTabPanelItem` will
+  call `dMeasureConfigurationTabPanelUI`
+
+  The module `id` is also returned by the integration function
+  `dMeasureIntegration` when called with the parameter `configID`
+}

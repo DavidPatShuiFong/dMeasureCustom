@@ -12,3 +12,6 @@ tabPanel
 \description{
 Custom module - configuration tabpanel item
 }
+\details{
+This function is called by `DailyMeasure`
+}
